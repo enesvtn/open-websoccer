@@ -57,20 +57,46 @@ class EmailHelper {
 	 * @param string $content message content.
 	 */
 	public static function sendSystemEmail(WebSoccer $websoccer, $recipient, $subject, $content) {
-		
-		$fromName = $websoccer->getConfig('projectname');
-		$fromEmail = $websoccer->getConfig('systememail');
-		
-		$headers   = array();
-		$headers[] = 'Content-type: text/plain; charset = \'UTF-8\'';
-		$headers[] = 'From: '. $fromName .' <'. $fromEmail . '>';
-		
-		$encodedsubject = '=?UTF-8?B?'.base64_encode($subject).'?=';
-		
-		if (@mail($recipient, $encodedsubject, $content, implode("\r\n", $headers)) == FALSE) {
-			throw new Exception('e-mail not sent.');
-		}
-	}
+    $configFile = BASE_FOLDER . '/admin/config/smtp.local.php';
+
+    if (!is_file($configFile)) {
+        throw new \Exception('SMTP ayar dosyası bulunamadı.');
+    }
+
+    $smtp = require $configFile;
+
+    try {
+        $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+
+        $mail->isSMTP();
+        $mail->Host = $smtp['host'];
+        $mail->SMTPAuth = true;
+        $mail->Username = $smtp['username'];
+        $mail->Password = $smtp['password'];
+        $mail->SMTPSecure =
+            \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
+        $mail->Port = (int) $smtp['port'];
+
+        $mail->CharSet = 'UTF-8';
+        $mail->isHTML(false);
+
+        $mail->setFrom(
+            $smtp['from_email'],
+            $websoccer->getConfig('projectname')
+        );
+
+        $mail->addAddress($recipient);
+        $mail->Subject = $subject;
+        $mail->Body = $content;
+
+        $mail->send();
+
+    } catch (\Throwable $e) {
+        throw new \Exception(
+            'SMTP e-posta gönderilemedi: ' . $e->getMessage()
+        );
+    }
+}
 	
 }
 ?>
