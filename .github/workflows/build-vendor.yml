@@ -20,7 +20,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: websoccer
-        run: composer install --no-dev --prefer-dist --optimize-autoloader
+        run: composer update phpmailer/phpmailer --with-all-dependencies --no-dev --prefer-dist --optimize-autoloader
 
       - name: Create vendor zip
         run: |
